@@ -13,6 +13,10 @@ crash.log
 # version control.
 #
 # example.tfvars
+*.tfvars
+
+# Lock files for local backends
+*.lock.hcl
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
