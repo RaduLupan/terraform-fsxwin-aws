@@ -42,9 +42,9 @@ variable "kms_key_id" {
   default     = null
 }
 
-variable "security_group_ids" {
-  description = "A list of IDs for the security groups that apply to the specified network interfaces created for file system access"
-  type        = list(string)
+variable "security_group_id" {
+  description = "The ID for the security group that applies to the specified network interfaces created for file system access"
+  type        = string 
   default     = null
 }
 
