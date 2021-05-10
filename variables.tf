@@ -30,6 +30,12 @@ variable "throughput_capacity" {
 # OPTIONAL PARAMETERS: These parameters have resonable defaults.
 #---------------------------------------------------------------
 
+variable "environment" {
+  description = "Environment i.e. dev, test, stage, prod"
+  type        = string
+  default     = "dev"
+}
+
 variable "kms_key_id" {
   description = "ARN for the KMS key to encrypt the file system at rest (defaults to an AWS managed KMS key)"
   type        = string
