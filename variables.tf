@@ -36,6 +36,12 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "name_tag" {
+  description = "Value for the name tag associated with the file system"
+  type        = string
+  default     = "My-File-System"
+}
+
 variable "kms_key_id" {
   description = "ARN for the KMS key to encrypt the file system at rest (defaults to an AWS managed KMS key)"
   type        = string
