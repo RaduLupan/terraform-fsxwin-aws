@@ -3,6 +3,11 @@ output "arn" {
   value       = aws_fsx_windows_file_system.main.arn
 }
 
+output "id" {
+  description = "Identifier of the file system"
+  value       = aws_fsx_windows_file_system.main.id
+}
+
 output "dns_name" {
   description = "DNS name for the file system"
   value       = aws_fsx_windows_file_system.main.dns_name
