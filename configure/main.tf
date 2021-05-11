@@ -77,3 +77,12 @@ resource "aws_security_group_rule" "allow_all_outbound" {
   protocol    = local.any_protocol
   cidr_blocks = local.all_ips
 }
+
+# Use this data set to replace embedded bash scripts such as user_data with scripts that sit on different source.
+data "template_file" "user_data" {
+  template = file("${path.module}/user-data.ps1")
+
+  vars = {
+    computer_name = var.ops_name
+  }
+}
