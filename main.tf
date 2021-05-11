@@ -18,11 +18,6 @@ locals {
     "445"  = data.aws_vpc.selected.cidr_block
     "5985" = data.aws_vpc.selected.cidr_block
   }
-
-  common_tags = {
-    terraform   = true
-    environment = var.environment
-  }
 }
 
 # Use this data source to retrieve details about a specific VPC subnet.
@@ -85,4 +80,10 @@ resource "aws_fsx_windows_file_system" "main" {
 
   storage_capacity    = var.storage_capacity_gb
   throughput_capacity = var.throughput_capacity
+
+  tags = {
+    Name        = var.name_tag
+    terraform   = true
+    environment = var.environment
+  }
 }
