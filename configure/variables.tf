@@ -7,8 +7,28 @@ variable "region" {
   type        = string
 }
 
-variable "active_directory_id" {
+variable "key_name" {
+  description = "The name of the key pair that allows to securely connect to the instance after launch"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "The  ID of a subnet in the VPC where the OPS instance will be deployed"
+  type        = string
+}
+
+variable "ad_id" {
   description = "The ID of the AWS Microsoft AD directory"
+  type        = string
+}
+
+variable "ad_dns_ips" {
+  description = "The IPs of the DNS servers for the AD domain"
+  type        = list(string)
+}
+
+variable "ad_domain_fqdn" {
+  description = "The  fully qualified domain name of the AD domain, i.e. example.com"
   type        = string
 }
 
@@ -22,3 +42,26 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "ops_instance_type" {
+  description = "The EC2 instance type for the OPS instance"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "ami_id" {
+  description = "The ID of the AWS EC2 AMI to use (if null the latest Windows Server 2019 is selected)"
+  type        = string
+  default     = null
+}
+
+variable "rdp_allowed_cidr" {
+  description = "The allowed CIDR IP range for RDP access to the OPS instance"
+  type        = string
+  default     = null
+}
+
+variable "ops_name" {
+  description = "The computer name of the OPS instance"
+  type        = string
+  default     = "ops01"
+}
