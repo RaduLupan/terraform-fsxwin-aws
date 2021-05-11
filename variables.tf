@@ -44,7 +44,7 @@ variable "kms_key_id" {
 
 variable "security_group_id" {
   description = "The ID for the security group that applies to the specified network interfaces created for file system access"
-  type        = string 
+  type        = string
   default     = null
 }
 
