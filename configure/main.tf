@@ -17,6 +17,11 @@ locals {
   rdp_port = 3389
 
   rdp_allowed_cidr = var.rdp_allowed_cidr == null ? local.all_ips[0] : var.rdp_allowed_cidr
+
+  common_tags = {
+    terraform   = true
+    environment = var.environment
+  }
 }
 
 # Use this data source to retrieve details about a specific VPC subnet.
@@ -85,4 +90,37 @@ data "template_file" "user_data" {
   vars = {
     computer_name = var.ops_name
   }
+}
+
+# Template file for the EC2 instance role trust policy.
+data "template_file" "ec2_role_trust" {
+  template = file("${path.module}/ec2-role-trust.json.tpl")
+}
+
+# Template file for the EC2 instance role IAM policy.
+data "template_file" "ec2_role_policy" {
+  template = file("${path.module}/ec2-role-policy.json.tpl")
+}
+
+# IAM instance role
+resource "aws_iam_role" "main" {
+  name = "${var.ops_name}-role"
+  path = "/"
+
+  assume_role_policy = data.template_file.ec2_role_trust.rendered
+  tags               = local.common_tags
+}
+
+# IAM instance policy.
+resource "aws_iam_role_policy" "main" {
+  name = "${var.ops_name}-policy"
+  role = aws_iam_role.main.id
+
+  policy = data.template_file.ec2_role_policy.rendered
+}
+
+# IAM instance profile.
+resource "aws_iam_instance_profile" "main" {
+  name = "${var.ops_name}-profile"
+  role = aws_iam_role.main.name
 }
