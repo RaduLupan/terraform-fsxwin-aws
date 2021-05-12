@@ -124,3 +124,66 @@ resource "aws_iam_instance_profile" "main" {
   name = "${var.ops_name}-profile"
   role = aws_iam_role.main.name
 }
+
+# EC2 instance for operations.
+resource "aws_instance" "ops" {
+  ami           = local.ami_id
+  instance_type = var.ops_instance_type
+
+  key_name               = var.key_name
+  monitoring             = true
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.main.id]
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = "150"
+    encrypted   = "true"
+  }
+
+  user_data = data.template_file.user_data.rendered
+
+  iam_instance_profile = aws_iam_instance_profile.main.name
+
+  tags = {
+    Name        = var.ops_name
+    terraform   = true
+    environment = var.environment
+  }
+}
+
+# Create template file for the SSM document if var.ssm_document is null.
+data "template_file" "ssm_document" {
+  count = var.ssm_document == null ? 1 : 0
+
+  template = file("${path.module}/ssm-document.json.tpl")
+
+  vars = {
+    ad_id           = var.ad_id
+    ad_domain_fqdn  = var.ad_domain_fqdn
+    ad_dns_ip1      = var.ad_dns_ips[0]
+    ad_dns_ip2      = var.ad_dns_ips[1]
+  }
+}
+
+# Create the SSM document if var.ssm_document is null.
+resource "aws_ssm_document" "main" {
+  count = var.ssm_document == null ? 1 : 0
+
+  name          = "${var.ad_domain_fqdn}-domain-join"
+  document_type = "Command"
+
+  content = data.template_file.ssm_document[0].rendered
+}
+
+# Create the SSM association if var.ssm_document is null.
+resource "aws_ssm_association" "main" {
+  count = var.ssm_document == null ? 1 : 0
+  
+  name = aws_ssm_document.main[0].name
+
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.ops.id]
+  }
+}
