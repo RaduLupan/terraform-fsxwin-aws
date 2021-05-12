@@ -65,3 +65,9 @@ variable "ops_name" {
   type        = string
   default     = "ops01"
 }
+
+variable "ssm_document" {
+  description = "The name of an SSM document that joins computers to AD domain (if null new SSM documnt will be created)"
+  type        = string
+  default     = null
+}
