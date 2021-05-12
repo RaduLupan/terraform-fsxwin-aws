@@ -32,6 +32,11 @@ variable "ad_domain_fqdn" {
   type        = string
 }
 
+variable "file_system_id" {
+  description = "Identifier of the FSx file system for Windows to configured"
+  type        = string
+}
+
 #---------------------------------------------------------------
 # OPTIONAL PARAMETERS: These parameters have resonable defaults.
 #---------------------------------------------------------------
@@ -68,6 +73,12 @@ variable "ops_name" {
 
 variable "ssm_document" {
   description = "The name of an SSM document that joins computers to AD domain (if null new SSM documnt will be created)"
+  type        = string
+  default     = null
+}
+
+variable "file_system_alias" {
+  description = "The alias to be added to the FSx file system for Windows"
   type        = string
   default     = null
 }
