@@ -9,6 +9,8 @@ Invoke-Expression -Command $cmd
 Install-WindowsFeature RSAT-AD-PowerShell, RSAT-DNS-Server
 
 # Associate alias to existing FSx file system. 
+$env:Path+=";C:\Program Files\Amazon\AWSCLIV2\"
+
 $cmd="aws fsx associate-file-system-aliases --file-system-id $fileSystemId --aliases $fileSystemAlias"
 Invoke-Expression -Command $cmd
 
