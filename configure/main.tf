@@ -179,11 +179,21 @@ resource "aws_ssm_document" "main" {
 # Create the SSM association if var.ssm_document is null.
 resource "aws_ssm_association" "main" {
   count = var.ssm_document == null ? 1 : 0
-  
+
   name = aws_ssm_document.main[0].name
 
   targets {
     key    = "InstanceIds"
     values = [aws_instance.ops.id]
   }
+}
+# Elastic IP.
+resource "aws_eip" "main" {
+  vpc = true
+}
+
+# Elastic IP association.
+resource "aws_eip_association" "main" {
+  instance_id   = aws_instance.ops.id
+  allocation_id = aws_eip.main.id
 }
