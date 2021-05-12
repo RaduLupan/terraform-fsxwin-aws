@@ -67,6 +67,15 @@
         ],
         "Effect": "Allow",
         "Resource": "*"
+      },
+      {
+        "Sid": "FSxFileSystem",
+        "Action": [
+          "fsx:UpdateFileSystem",
+          "fsx:AssociateFileSystemAliases"
+        ],
+        "Effect": "Allow",
+        "Resource": "*"
       }
     ]
   }
