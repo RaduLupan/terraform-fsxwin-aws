@@ -88,7 +88,9 @@ data "template_file" "user_data" {
   template = file("${path.module}/user-data.ps1")
 
   vars = {
-    computer_name = var.ops_name
+    computer_name     = var.ops_name
+    file_system_id    = var.file_system_id
+    file_system_alias = var.file_system_alias
   }
 }
 
@@ -159,10 +161,10 @@ data "template_file" "ssm_document" {
   template = file("${path.module}/ssm-document.json.tpl")
 
   vars = {
-    ad_id           = var.ad_id
-    ad_domain_fqdn  = var.ad_domain_fqdn
-    ad_dns_ip1      = var.ad_dns_ips[0]
-    ad_dns_ip2      = var.ad_dns_ips[1]
+    ad_id          = var.ad_id
+    ad_domain_fqdn = var.ad_domain_fqdn
+    ad_dns_ip1     = var.ad_dns_ips[0]
+    ad_dns_ip2     = var.ad_dns_ips[1]
   }
 }
 
