@@ -13,7 +13,7 @@ Install-WindowsFeature RSAT-AD-PowerShell, RSAT-DNS-Server
 # Associate alias to existing FSx file system. 
 $env:Path+=";C:\Program Files\Amazon\AWSCLIV2\"
 
-$cmd="aws fsx associate-file-system-aliases --file-system-id $fileSystemId --aliases $fileSystemAlias"
+$cmd="aws fsx associate-file-system-aliases --file-system-id $FileSystemId --aliases $FileSystemAlias"
 Invoke-Expression -Command $cmd
 
 # Find SPNs for original file system's AD computer object.
@@ -21,11 +21,11 @@ SetSPN /Q ("HOST/" + $FileSystemAlias)
 SetSPN /Q ("HOST/" + $FileSystemAlias.Split(".")[0])
 
 # Delete SPNs for original file system's AD computer object.
-$FileSystemHost = (Resolve-DnsName ${FileSystemDnsName} | Where-Object Type -eq 'A')[0].Name.Split(".")[0]
-$FSxAdComputer = (Get-AdComputer -Identity ${FileSystemHost})
+$FileSystemHost = (Resolve-DnsName $FileSystemDnsName | Where-Object Type -eq 'A')[0].Name.Split(".")[0]
+$FSxAdComputer = (Get-AdComputer -Identity $FileSystemHost)
 
-SetSPN /D ("HOST/" + ${FileSystemAlias}) ${FSxAdComputer}.Name
-SetSPN /D ("HOST/" + ${FileSystemAlias}.Split(".")[0]) ${FSxAdComputer}.Name
+SetSPN /D ("HOST/" + $FileSystemAlias) $FSxAdComputer.Name
+SetSPN /D ("HOST/" + $FileSystemAlias.Split(".")[0]) $FSxAdComputer.Name
 
 # Set SPNs for FSx file system AD computer object.
 Set-AdComputer -Identity $FSxAdComputer -Add @{"msDS-AdditionalDnsHostname"="$FileSystemAlias"}
@@ -33,7 +33,7 @@ SetSpn /S ("HOST/" + $FileSystemAlias.Split('.')[0]) $FSxAdComputer.Name
 SetSpn /S ("HOST/" + $FileSystemAlias) $FSxAdComputer.Name
 
 # Verify SPNs on FSx file system AD computer object.
-SetSpn /L ${FSxAdComputer}.Name
+SetSpn /L $FSxAdComputer.Name
 
 # Create/update DNS CNAME for your Amazon FSx file system.
 $AliasHost=$FileSystemAlias.Split('.')[0]
