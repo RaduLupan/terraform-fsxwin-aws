@@ -203,7 +203,7 @@ resource "aws_eip_association" "main" {
 }
 
 resource "aws_s3_bucket" "scripts" {
-  bucket = "${var.ops_name}-${aws_instance.ops.id}-scripts-${var.region}"
+  bucket = "${var.ops_name}-scripts-${var.region}"
 
   acl    = "private"
 
