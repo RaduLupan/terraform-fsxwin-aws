@@ -199,3 +199,20 @@ resource "aws_eip_association" "main" {
   instance_id   = aws_instance.ops.id
   allocation_id = aws_eip.main.id
 }
+
+resource "aws_s3_bucket" "scripts" {
+  bucket = "${var.ops_name}-${aws_instance.ops.id}-scripts-${var.region}"
+
+  acl    = "private"
+
+  force_destroy = "true"
+
+  tags = local.common_tags
+}
+
+resource "aws_s3_bucket_object" "configure_fsx_ps1_upload" {
+  bucket = aws_s3_bucket.scripts.id
+  key    = "configure-fsx.ps1"
+  source = "./configure-fsx.ps1"
+  etag   = filemd5("./configure-fsx.ps1")
+}
