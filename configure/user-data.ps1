@@ -24,5 +24,10 @@ if (! (Test-Path -Path "C:\scripts")) {
     New-Item -Path "C:\scripts" -ItemType Container | Out-Null
 }
 
+# Download the Powershell script from S3 buket in the C:\scripts folder.
+if ($S3Bucket -ne $null) {
+    Read-S3Object -BucketName $S3Bucket -Key "configure-fsx.ps1" -File "C:\scripts\configure-fsx.ps1" -Region $Region
+}
+
 Rename-Computer -NewName $ComputerName -Force
 </powershell>
