@@ -17,5 +17,9 @@ if ($FileSystemAlias -ne $null) {
     Invoke-Expression -Command $cmd
 }
 
+if (! (Test-Path -Path "C:\scripts")) {
+    New-Item -Path "C:\scripts" -ItemType Container | Out-Null
+}
+
 Rename-Computer -NewName "${computer_name}" -Force
 </powershell>
