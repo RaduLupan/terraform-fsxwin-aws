@@ -1,6 +1,8 @@
+param (
+    [string]$FileSystemId,
+    [string]$FileSystemAlias
+)
 
-$FileSystemId="${file_system_id}"
-$FileSystemAlias="${file_system_alias}"
 $FileSystemDnsName=(Get-FSXFileSystem -FileSystemId $FileSystemId).DNSName
 
 # Find SPNs for original file system's AD computer object.
