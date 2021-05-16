@@ -88,6 +88,8 @@ data "template_file" "user_data" {
   template = file("${path.module}/user-data.ps1")
 
   vars = {
+    region            = var.region
+    s3_bucket         = aws_s3_bucket.scripts.id
     computer_name     = var.ops_name
     file_system_id    = var.file_system_id
     file_system_alias = var.file_system_alias

@@ -1,4 +1,7 @@
 <powershell>
+$Region="${region}"
+$S3Bucket="${s3_bucket}"
+$ComputerName="${computer_name}"
 $FileSystemId="${file_system_id}"
 $FileSystemAlias="${file_system_alias}"
 
@@ -21,5 +24,5 @@ if (! (Test-Path -Path "C:\scripts")) {
     New-Item -Path "C:\scripts" -ItemType Container | Out-Null
 }
 
-Rename-Computer -NewName "${computer_name}" -Force
+Rename-Computer -NewName $ComputerName -Force
 </powershell>
