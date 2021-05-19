@@ -1,5 +1,5 @@
 # terraform-fsxwin-aws
-This repository contains Terraform configurations that deploy an [Amazon FSx for Windows File Server](https://docs.aws.amazon.com/fsx/latest/WindowsGuide/what-is.html) and an associate Windows EC2 instance used for configuring the FSx file system.
+This repository contains Terraform configurations that deploy an [Amazon FSx for Windows File Server](https://docs.aws.amazon.com/fsx/latest/WindowsGuide/what-is.html) and an associated Windows EC2 instance used for configuring the FSx file system.
 
 * [Amazon Web Services (AWS) account](http://aws.amazon.com/).
 * Terraform 0.14 installed on your computer. Check out HasiCorp [documentation](https://learn.hashicorp.com/terraform/azure/install) on how to install Terraform.
