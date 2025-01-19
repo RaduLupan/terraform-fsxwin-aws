@@ -3,7 +3,7 @@ This repository contains Terraform configurations that deploy an [Amazon FSx for
 
 ## Prerequisites
 * [Amazon Web Services (AWS) account](http://aws.amazon.com/).
-* Terraform 0.14 installed on your computer. Check out HasiCorp [documentation]([https://learn.hashicorp.com/terraform/azure/install](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)) on how to install Terraform.
+* Terraform 0.14 installed on your computer. Check out HasiCorp [documentation](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) on how to install Terraform.
 
 ## Quick start
 
