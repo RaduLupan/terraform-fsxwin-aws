@@ -1,10 +1,78 @@
-# terraform-fsxwin-aws - configure
-This folder contains Terraform configurations that deploy an AD domain joined EC2 instance used for configuring the FSx file system.
+# Configure Module
 
-* In the [```user-data.ps1```](https://github.com/RaduLupan/terraform-fsxwin-aws/blob/main/configure/user-data.ps1) script that is run when the [EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html) boots up for the first time, the custom DNS alias is added using [AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/fsx/associate-file-system-aliases.html) command ```aws fsx associate-file-system-aliases```. This is because at the time of this writing (May 20, 2021) there is still no support for adding DNS aliases to FSx in [Terraform](https://github.com/hashicorp/terraform-provider-aws/issues/16548). 
+This module deploys an AD domain-joined Windows EC2 instance for administering the FSx file system.
 
-* The [```configure-fsx.ps1```](https://github.com/RaduLupan/terraform-fsxwin-aws/blob/main/configure/configure-fsx.ps1) script is downloaded from S3 bucket to **C:\scripts** folder on the EC2 instance and needs to be run **after** the instance rebooted to complete the domain join. This script is based on AWS documentation [Walkthrough 5: Using DNS aliases to access your file system](https://docs.aws.amazon.com/fsx/latest/WindowsGuide/walkthrough05-file-system-custom-CNAME.html) and it takes two input parameters: ```$FileSystemId``` and ```$FileSystemAlias```. Running this script is idempotent: if run multiple times produces the same result. 
+## Requirements
 
-* This solution only covers adding one DNS alias to your Amazon FSx file system. If you need more aliases you can associate up to 50 using the [Amazon FSx console](https://docs.aws.amazon.com/fsx/latest/WindowsGuide/walkthrough05-file-system-custom-CNAME.html) or the AWS CLI and then run the ```configure-fsx.ps1``` for each alias to create the corresponding [Service Principal Names](https://docs.microsoft.com/en-us/windows/win32/ad/service-principal-names) and DNS records.
+| Name | Version |
+|------|---------|
+| terraform | >= 1.5 |
+| aws | ~> 5.0 |
 
-* For further configuration of your Amazon FSx file system you can use the OPS EC2 instance deployed here as it has all the necessary features installed. Check out [this](https://docs.aws.amazon.com/fsx/latest/WindowsGuide/remote-pwrshell.html) document for more details on how to administer the FSx file system with PowerShell. If you already have an OPS instance joined to domain you can run ```terraform destroy``` in this folder once the DNS alias was added.
+## Features
+
+- **Windows Server 2019** EC2 instance (or custom AMI)
+- **Automatic domain join** via SSM document
+- **Elastic IP** for consistent public access
+- **S3 bucket** for configuration scripts
+- **Security group** with RDP access
+
+## Usage
+
+```hcl
+module "fsx_ops" {
+  source = "./configure"
+
+  region            = "us-east-1"
+  key_name          = "my-key-pair"
+  subnet_id         = "subnet-abc123"
+  ad_id             = "d-1234567890"
+  ad_dns_ips        = ["10.0.0.10", "10.0.1.10"]
+  ad_domain_fqdn    = "corp.example.com"
+  file_system_id    = "fs-0123456789abcdef"
+  file_system_alias = "fsx.corp.example.com"
+  rdp_allowed_cidr  = "203.0.113.0/24"
+}
+```
+
+## Inputs
+
+| Name | Description | Type | Required |
+|------|-------------|------|----------|
+| region | AWS region | `string` | Yes |
+| key_name | EC2 key pair name | `string` | Yes |
+| subnet_id | Subnet ID for EC2 instance | `string` | Yes |
+| ad_id | AWS Managed AD directory ID | `string` | Yes |
+| ad_dns_ips | AD DNS server IPs | `list(string)` | Yes |
+| ad_domain_fqdn | AD domain FQDN | `string` | Yes |
+| file_system_id | FSx file system ID | `string` | Yes |
+| file_system_alias | DNS alias for FSx | `string` | No |
+| ops_instance_type | EC2 instance type | `string` | No |
+| ami_id | Custom AMI ID | `string` | No |
+| rdp_allowed_cidr | CIDR for RDP access | `string` | No |
+| ops_name | Computer name for instance | `string` | No |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| instance_id | EC2 instance ID |
+| instance_public_ip | Elastic IP address |
+| instance_private_ip | Private IP address |
+| security_group_id | Security group ID |
+| s3_bucket_name | S3 bucket for scripts |
+| ssm_document_name | SSM document for domain join |
+
+## Post-Deployment Steps
+
+1. **Wait for domain join** - The instance will reboot after joining the domain
+2. **RDP to the instance** - Use the Elastic IP with domain credentials
+3. **Run configuration script** (optional):
+   ```powershell
+   C:\scripts\configure-fsx.ps1 -FileSystemId "fs-xxx" -FileSystemAlias "fsx.corp.example.com"
+   ```
+
+## Notes
+
+- The `configure-fsx.ps1` script adds the DNS alias and Service Principal Names (SPNs) for Kerberos authentication
+- For remote FSx administration, use: `Enter-PSSession -ComputerName <remote_admin_endpoint> -ConfigurationName FsxRemoteAdmin`

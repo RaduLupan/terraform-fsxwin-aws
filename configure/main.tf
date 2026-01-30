@@ -22,6 +22,10 @@ locals {
     terraform   = true
     environment = var.environment
   }
+
+  # Rendered templates using templatefile() function.
+  ec2_role_trust_policy = file("${path.module}/ec2-role-trust.json.tpl")
+  ec2_role_policy       = file("${path.module}/ec2-role-policy.json.tpl")
 }
 
 # Use this data source to retrieve details about a specific VPC subnet.
@@ -83,35 +87,12 @@ resource "aws_security_group_rule" "allow_all_outbound" {
   cidr_blocks = local.all_ips
 }
 
-# Use this data set to replace embedded bash scripts such as user_data with scripts that sit on different source.
-data "template_file" "user_data" {
-  template = file("${path.module}/user-data.ps1")
-
-  vars = {
-    region            = var.region
-    s3_bucket         = aws_s3_bucket.scripts.id
-    computer_name     = var.ops_name
-    file_system_id    = var.file_system_id
-    file_system_alias = var.file_system_alias
-  }
-}
-
-# Template file for the EC2 instance role trust policy.
-data "template_file" "ec2_role_trust" {
-  template = file("${path.module}/ec2-role-trust.json.tpl")
-}
-
-# Template file for the EC2 instance role IAM policy.
-data "template_file" "ec2_role_policy" {
-  template = file("${path.module}/ec2-role-policy.json.tpl")
-}
-
 # IAM instance role
 resource "aws_iam_role" "main" {
   name = "${var.ops_name}-role"
   path = "/"
 
-  assume_role_policy = data.template_file.ec2_role_trust.rendered
+  assume_role_policy = local.ec2_role_trust_policy
   tags               = local.common_tags
 }
 
@@ -120,7 +101,7 @@ resource "aws_iam_role_policy" "main" {
   name = "${var.ops_name}-policy"
   role = aws_iam_role.main.id
 
-  policy = data.template_file.ec2_role_policy.rendered
+  policy = local.ec2_role_policy
 }
 
 # IAM instance profile.
@@ -141,11 +122,17 @@ resource "aws_instance" "ops" {
 
   root_block_device {
     volume_type = "gp3"
-    volume_size = "150"
-    encrypted   = "true"
+    volume_size = 150
+    encrypted   = true
   }
 
-  user_data = data.template_file.user_data.rendered
+  user_data = templatefile("${path.module}/user-data.ps1", {
+    region            = var.region
+    s3_bucket         = aws_s3_bucket.scripts.id
+    computer_name     = var.ops_name
+    file_system_id    = var.file_system_id
+    file_system_alias = var.file_system_alias
+  })
 
   iam_instance_profile = aws_iam_instance_profile.main.name
 
@@ -156,20 +143,6 @@ resource "aws_instance" "ops" {
   }
 }
 
-# Create template file for the SSM document if var.ssm_document is null.
-data "template_file" "ssm_document" {
-  count = var.ssm_document == null ? 1 : 0
-
-  template = file("${path.module}/ssm-document.json.tpl")
-
-  vars = {
-    ad_id          = var.ad_id
-    ad_domain_fqdn = var.ad_domain_fqdn
-    ad_dns_ip1     = var.ad_dns_ips[0]
-    ad_dns_ip2     = var.ad_dns_ips[1]
-  }
-}
-
 # Create the SSM document if var.ssm_document is null.
 resource "aws_ssm_document" "main" {
   count = var.ssm_document == null ? 1 : 0
@@ -177,7 +150,12 @@ resource "aws_ssm_document" "main" {
   name          = "${var.ad_domain_fqdn}-domain-join"
   document_type = "Command"
 
-  content = data.template_file.ssm_document[0].rendered
+  content = templatefile("${path.module}/ssm-document.json.tpl", {
+    ad_id          = var.ad_id
+    ad_domain_fqdn = var.ad_domain_fqdn
+    ad_dns_ip1     = var.ad_dns_ips[0]
+    ad_dns_ip2     = var.ad_dns_ips[1]
+  })
 }
 
 # Create the SSM association if var.ssm_document is null.
@@ -193,7 +171,7 @@ resource "aws_ssm_association" "main" {
 }
 # Elastic IP.
 resource "aws_eip" "main" {
-  vpc = true
+  domain = "vpc"
 }
 
 # Elastic IP association.
@@ -202,17 +180,35 @@ resource "aws_eip_association" "main" {
   allocation_id = aws_eip.main.id
 }
 
+# S3 bucket for scripts.
 resource "aws_s3_bucket" "scripts" {
   bucket = "${var.ops_name}-scripts-${var.region}"
 
-  acl    = "private"
-
-  force_destroy = "true"
+  force_destroy = true
 
   tags = local.common_tags
 }
 
-resource "aws_s3_bucket_object" "configure_fsx_ps1_upload" {
+# S3 bucket versioning (recommended).
+resource "aws_s3_bucket_versioning" "scripts" {
+  bucket = aws_s3_bucket.scripts.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# S3 bucket public access block (security best practice).
+resource "aws_s3_bucket_public_access_block" "scripts" {
+  bucket = aws_s3_bucket.scripts.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Upload PowerShell script to S3.
+resource "aws_s3_object" "configure_fsx_ps1_upload" {
   bucket = aws_s3_bucket.scripts.id
   key    = "configure-fsx.ps1"
   source = "./configure-fsx.ps1"
