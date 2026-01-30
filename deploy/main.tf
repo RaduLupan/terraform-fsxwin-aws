@@ -11,13 +11,19 @@ locals {
   any_port     = 0
   any_protocol = "-1"
   tcp_protocol = "tcp"
+  udp_protocol = "udp"
   all_ips      = ["0.0.0.0/0"]
 
   # Allow ingress SMB and WinRM from the VPC CIDR.
-  ports_source_map = {
+  ingress_tcp_ports = {
     "445"  = data.aws_vpc.selected.cidr_block
     "5985" = data.aws_vpc.selected.cidr_block
   }
+
+  # FSx requires these ports for Active Directory integration
+  # Reference: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/aws-ad-integration-fsxW.html
+  egress_tcp_ports = [53, 88, 135, 389, 445, 464, 636, 3268, 3269]
+  egress_udp_ports = [53, 88, 123, 389, 464]
 }
 
 # Use this data source to retrieve details about a specific VPC subnet.
@@ -45,8 +51,8 @@ resource "aws_security_group" "main" {
 }
 
 # Ingress rules.
-resource "aws_security_group_rule" "ingress" {
-  for_each = local.ports_source_map
+resource "aws_security_group_rule" "ingress_tcp" {
+  for_each = local.ingress_tcp_ports
 
   type              = "ingress"
   description       = "Inbound TCP ${each.key}"
@@ -58,7 +64,35 @@ resource "aws_security_group_rule" "ingress" {
   cidr_blocks = [each.value]
 }
 
-# Egress rule: allow all outbound traffic.
+# Egress TCP rules for Active Directory integration.
+resource "aws_security_group_rule" "egress_tcp" {
+  for_each = toset([for p in local.egress_tcp_ports : tostring(p)])
+
+  type              = "egress"
+  description       = "Outbound TCP ${each.key} for AD"
+  security_group_id = aws_security_group.main[0].id
+
+  from_port   = tonumber(each.key)
+  to_port     = tonumber(each.key)
+  protocol    = local.tcp_protocol
+  cidr_blocks = local.all_ips
+}
+
+# Egress UDP rules for Active Directory integration.
+resource "aws_security_group_rule" "egress_udp" {
+  for_each = toset([for p in local.egress_udp_ports : tostring(p)])
+
+  type              = "egress"
+  description       = "Outbound UDP ${each.key} for AD"
+  security_group_id = aws_security_group.main[0].id
+
+  from_port   = tonumber(each.key)
+  to_port     = tonumber(each.key)
+  protocol    = local.udp_protocol
+  cidr_blocks = local.all_ips
+}
+
+# Egress rule: allow all other outbound traffic.
 resource "aws_security_group_rule" "allow_all_outbound" {
   type              = "egress"
   security_group_id = aws_security_group.main[0].id
